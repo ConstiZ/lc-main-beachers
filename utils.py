@@ -7,6 +7,8 @@ import gspread
 from gspread_dataframe import get_as_dataframe, set_with_dataframe
 import streamlit as st
 import datetime
+import plotly.express as px
+
 
 columns = ["Vorname", "Nachname", "Stadt", "Ankunft", "Abreise", "Suche", "SucheAb", "SucheBis", "Biete", "BieteAb", "BieteBis"]
 start_date = datetime.date(2023, 11, 1)
@@ -25,6 +27,14 @@ def get_df(worksheet):
     df = df[columns]
     df = df.dropna(how='all')
     df = df.reset_index(drop=True)
+    dates = ["Ankunft", "Abreise", "SucheAb", "SucheBis", "BieteAb", "BieteBis"]
+    for d in dates:
+        df[d] = pd.to_datetime(df[d])
+    bools = ["Suche", "Biete"]
+    for b in bools:
+        df[b] = df[b].astype(bool)
+    
+    df["Name"] = df["Vorname"] + " " + df["Nachname"]
     return df
 
 def submit_registration(row):
@@ -55,4 +65,38 @@ def get_calendar_df():
     df_date = pd.DataFrame(date_list, columns=["Date"])
 
     df_calendar = df.merge(df_date, how="cross")
+    df_calendar["Anwesend"] = (df_calendar["Ankunft"] <= df_calendar["Date"]) & (df_calendar["Date"] <= df_calendar["Abreise"])
+    df_calendar["Suchend"] = (df_calendar["SucheAb"] <= df_calendar["Date"]) & (df_calendar["Date"] <= df_calendar["SucheBis"])
+    df_calendar["Bietend"] = (df_calendar["BieteAb"] <= df_calendar["Date"]) & (df_calendar["Date"] <= df_calendar["BieteBis"])
+
+    def lambda_row(a, s, b):
+        x = "N"
+        if a :
+            x = "A"
+        if s:
+            x += "S"
+        if b:
+            x += "b"
+        return x
+    
+    df_calendar["Status"] = df_calendar.apply(lambda row: lambda_row(row["Anwesend"], row["Suchend"], row["Bietend"]), axis=1)
     return df_calendar
+
+
+def get_timeline(df, start, end, title, y="Name"):
+    fig = px.timeline(df, x_start=start, x_end=end, y=y, title=title)
+    fig.update_yaxes(categoryorder="total ascending")  # Order tasks by their position in the DataFrame
+
+    # Customize the x-axis tick values and labels
+    date_range = pd.date_range(start=df[start].min(), end=df[end].max())
+    fig.update_xaxes(
+        tickvals=date_range,  # Specify the tick values (every day)
+        ticktext=[date.strftime('%d.%m.%Y') for date in date_range],  # Format the tick labels
+        tickmode="array",
+    )
+    fig.update_layout(height=600)
+    fig.update_xaxes(nticks=14, showgrid=True, tickmode="linear")
+
+
+
+    return fig

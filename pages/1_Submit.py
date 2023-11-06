@@ -4,6 +4,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from utils import *
 
+
 st.markdown("---")
 st.header("Anmelden")
 
@@ -43,20 +44,22 @@ if cb_offer:
         format="DD.MM.YYYY",
     )
 
-row = {
-    "Vorname": first_name,
-    "Nachname": last_name,
-    "Stadt": city,
-    "Ankunft": d_stay[0],
-    "Abreise": d_stay[1],
-    "Suche": cb_lf,
-    "Biete": cb_offer,
-}
-
-row["BieteAb"] = d_offer[0] if cb_offer else None
-row["BieteBis"] = d_offer[1] if cb_offer else None
-row["SucheAb"] = d_lf[0] if cb_lf else None
-row["SucheBis"] = d_lf[1] if cb_lf else None
+if isinstance(d_stay, tuple) and len(d_stay) > 1:
+    row = {
+        "Vorname": first_name,
+        "Nachname": last_name,
+        "Stadt": city,
+        "Ankunft": d_stay[0],
+        "Abreise": d_stay[1],
+        "Suche": cb_lf,
+        "Biete": cb_offer,
+    }
+if cb_offer and isinstance(d_offer, tuple) and len(d_offer) > 1:
+    row["BieteAb"] = d_offer[0] if cb_offer else None
+    row["BieteBis"] = d_offer[1] if cb_offer else None
+if cb_lf and isinstance(d_lf, tuple) and len(d_lf) > 1:
+    row["SucheAb"] = d_lf[0] if cb_lf else None
+    row["SucheBis"] = d_lf[1] if cb_lf else None
 
 
 b_submit = st.button("Submit")

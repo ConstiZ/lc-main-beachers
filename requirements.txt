@@ -6,3 +6,4 @@ streamlit
 st-gsheets-connection
 pandasql
 gspread_dataframe
+plotly
