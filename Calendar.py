@@ -4,7 +4,6 @@ from streamlit_gsheets import GSheetsConnection
 from utils import *
 import plotly.express as px
 from st_aggrid import AgGrid, GridOptionsBuilder
-from pyecharts.commons.utils import JsCode
 
 
 
