@@ -70,7 +70,7 @@ def get_calendar_df():
     df_calendar["Bietend"] = (df_calendar["BieteAb"] <= df_calendar["Date"]) & (df_calendar["Date"] <= df_calendar["BieteBis"])
 
     def lambda_row(a, s, b):
-        x = "N"
+        x = ""
         if a :
             x = "A"
         if s:

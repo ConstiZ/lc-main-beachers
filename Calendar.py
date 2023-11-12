@@ -4,6 +4,7 @@ from streamlit_gsheets import GSheetsConnection
 from utils import *
 import plotly.express as px
 from st_aggrid import AgGrid, GridOptionsBuilder
+from pyecharts.commons.utils import JsCode
 
 
 
@@ -21,7 +22,6 @@ def run():
 
     # st.sidebar.success("Select a demo above.")
 
-    
 
 if __name__ == "__main__":
     run()
@@ -29,69 +29,49 @@ if __name__ == "__main__":
 
 df = get_df(get_worksheet())
 
-# fig_anwesenheit = get_timeline(df, "Ankunft", "Abreise", "Anwesenheit")
-# px_anwesenheit = st.plotly_chart(fig_anwesenheit, use_container_width=True, height=500)
-
-# with st.expander("Suche Schlafplatz"):
-#     df_suche = df[df['Suche'] == True]
-#     if not df_suche.empty:
-#         fig_suche = get_timeline(df_suche, "SucheAb", "SucheBis", "Suche Schlafplatz")
-#         px_suche = st.plotly_chart(fig_suche, use_container_width=True, height=500)
-#     else:
-#         st.error("Es werden keine Schlafplätze gesucht")
-
-# with st.expander("Biete Schlafplatz"):
-#     df_biete = df[df['Biete'] == True]
-#     if not df_biete.empty:
-#         fig_biete = get_timeline(df_biete, "BieteAb", "BieteBis", "Biete Schlafplatz")
-#         px_biete = st.plotly_chart(fig_biete, use_container_width=True, height=500)
-#     else:
-#         st.error("Es werden keine Schlafplätze angeboten")
 
 
 df_cal = get_calendar_df()
+df_suche = df_cal[df_cal['Suche'] == True]
+df_biete = df_cal[df_cal['Biete'] == True]
+
+df_piv = df_cal.pivot(index='Name', columns='Date', values='Anwesend')
+df_piv_suche = df_suche.pivot(index='Name', columns='Date', values='Suchend')
+df_piv_biete = df_biete.pivot(index='Name', columns='Date', values='Bietend')
 
 
-gb = GridOptionsBuilder()
+def highlight_cells_green(value):
+    if value:
+        return 'background-color: green'
+    else:
+        return ''
 
-# makes columns resizable, sortable and filterable by default
-gb.configure_default_column(
-    resizable=True,
-    filterable=True,
-    sortable=True,
-    editable=False,
-)
+def highlight_cells_orange(value):
+    if value:
+        return 'background-color: orange'
+    else:
+        return ''
 
-#configures Power Plant column to have a tooltip and adjust to fill the grid container
-gb.configure_column(
-    field="Name",
-    header_name="Name",
-    flex=1,
-    tooltipField="Name",
-    rowGroup=True
-)
+def highlight_cells_blue(value):
+    if value:
+        return 'background-color: lightblue'
+    else:
+        return ''
 
-gb.configure_column(
-    field="Date",
-    header_name="Date",
-    width=100,
-    #valueFormatter="value != undefined ? new Date(value).toLocaleString('en-US', {dateStyle:'medium'}): ''",
-    pivot=True # this tells the grid we'll be pivoting on reference date
-)
+styled_df = df_piv.style.applymap(highlight_cells_green)
+styled_df_suche = df_piv_suche.style.applymap(highlight_cells_orange)
+styled_df_biete = df_piv_biete.style.applymap(highlight_cells_blue)
 
-gb.configure_column(
-    field="Status",
-    header_name="Status",
-    width=100,
-    #type=["numericColumn"],
-    #valueFormatter="value.toLocaleString()",
-    aggFunc="first" # this tells the grid we'll be summing values on the same reference date
-)
+stdf_anwesend = st.dataframe(styled_df)
 
-#makes tooltip appear instantly
-gb.configure_grid_options(
-    pivotMode=True # Enables pivot mode
-    )
-go = gb.build()
+with st.expander("Personen, die noch eine Unterkunft suchen:"):
+    if not df_piv_suche.empty:
+        stdf_suchen = st.dataframe(styled_df_suche)
+    else:
+        st.error("Es werden zurzeit keine Unterkünfte gesucht")
 
-AgGrid(df_cal, gridOptions=go, height=400)
+with st.expander("Personen, die eine Unterkunft anbieten:"):
+    if not df_piv_biete.empty:
+        stdf_biete = st.dataframe(styled_df_biete)
+    else:
+        st.error("Es werden zurzeit keine Unterkünfte angeboten")
