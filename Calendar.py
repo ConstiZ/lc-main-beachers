@@ -14,7 +14,8 @@ def run():
     st.set_page_config(
         page_title="Los Cristianos '24",
         page_icon="🏐",
-        layout="wide"
+        layout="wide",
+        initial_sidebar_state="expanded"
     )
 
     st.title("Los Cristianos '24")
@@ -31,6 +32,7 @@ df = get_df(get_worksheet())
 
 
 df_cal = get_calendar_df()
+# st.dataframe(df_cal)
 df_suche = df_cal[df_cal['Suche'] == True]
 df_biete = df_cal[df_cal['Biete'] == True]
 

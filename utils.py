@@ -11,7 +11,7 @@ import plotly.express as px
 
 
 columns = ["Vorname", "Nachname", "Stadt", "Ankunft", "Abreise", "Suche", "SucheAb", "SucheBis", "Biete", "BieteAb", "BieteBis"]
-start_date = datetime.date(2023, 11, 1)
+start_date = datetime.date(2023, 12, 1)
 end_date = datetime.date(2024, 4, 1)
 
 def get_worksheet():
@@ -80,6 +80,7 @@ def get_calendar_df():
         return x
     
     df_calendar["Status"] = df_calendar.apply(lambda row: lambda_row(row["Anwesend"], row["Suchend"], row["Bietend"]), axis=1)
+
     return df_calendar
 
 
