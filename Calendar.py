@@ -37,6 +37,13 @@ df_suche = df_cal[df_cal['Suche'] == True]
 df_biete = df_cal[df_cal['Biete'] == True]
 
 df_piv = df_cal.pivot(index='Name', columns='Date', values='Anwesend')
+column_map = {}
+cols = df_piv.columns
+for col in cols:
+    split = str(col).split("-")
+    column_map[col] = split[2] + "." + split[1]
+df_piv.rename(columns=column_map, inplace=True)
+
 df_piv_suche = df_suche.pivot(index='Name', columns='Date', values='Suchend')
 df_piv_biete = df_biete.pivot(index='Name', columns='Date', values='Bietend')
 
