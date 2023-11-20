@@ -11,7 +11,7 @@ import plotly.express as px
 
 
 columns = ["Vorname", "Nachname", "Stadt", "Ankunft", "Abreise", "Suche", "SucheAb", "SucheBis", "Biete", "BieteAb", "BieteBis"]
-start_date = datetime.date(2023, 12, 1)
+start_date = datetime.date(2023, 12, 16)
 end_date = datetime.date(2024, 4, 1)
 
 def get_worksheet():
@@ -35,12 +35,16 @@ def get_df(worksheet):
         df[b] = df[b].astype(bool)
     
     df["Name"] = df["Vorname"] + " " + df["Nachname"]
+    df = df.sort_values(by='Ankunft')
     return df
 
 def submit_registration(row):
     worksheet = get_worksheet()
     df = get_df(worksheet)
     df_row = pd.DataFrame([row])
+    if row["Vorname"] is None or row["Vorname"] == '' or row["Nachname"] is None or row["Nachname"] == '':
+        st.error("Bitte Vor- & Nachname eingeben")
+        return False
     # drop old row
     condition = (df["Vorname"] == row["Vorname"]) & (df["Nachname"] == row["Nachname"])
     if condition.any():
@@ -50,6 +54,7 @@ def submit_registration(row):
     df = df.drop(df[condition].index)
     df = df.append(df_row)
     set_with_dataframe(worksheet, df)
+    return True
 
 
 def get_calendar_df():
