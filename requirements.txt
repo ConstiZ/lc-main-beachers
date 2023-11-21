@@ -8,3 +8,4 @@ pandasql
 gspread_dataframe
 plotly
 streamlit-aggrid
+st-card

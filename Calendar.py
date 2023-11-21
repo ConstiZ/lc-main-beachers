@@ -5,7 +5,7 @@ from utils import *
 import plotly.express as px
 from st_aggrid import AgGrid, GridOptionsBuilder
 from dateutil.relativedelta import relativedelta
-
+from datetime import date
 
 LOGGER = get_logger(__name__)
 
@@ -29,62 +29,56 @@ if __name__ == "__main__":
 
 df = get_df(get_worksheet())
 
+day = date.today()
+day = datetime.date(2023, 12, 30)
+with st.expander("Stats - Heute " + str(day.strftime("%d.%m.%Y")), expanded=True):
+    col1, col2, col3 = st.columns(3)
+    
+    # Metric Cards
+    with col1:
+        df_met, _ = get_calendars_piv(df, 'Anwesend', start_date, end_date)
+        # Gesamt
+        st.metric("Gesamtanmeldungen", df.shape[0])
+
+    # daily
+    # with col2:
+        day_met = get_attendance(df, day)
+        day_met_prev = get_attendance(df, day - datetime.timedelta(days=1))
+        st.metric("Anwesenheit heute " + str(day.strftime("%d.%m.%Y")), day_met, day_met - day_met_prev)
+    
+    with col2:
+        day_end = day + datetime.timedelta(days=7)
+        df_arrivals = get_arrivals(df, "Ankunft", day, day_end)
+        st.write("Ankunft - nächste 7 TAge")
+        st.dataframe(df_arrivals)
+
+    with col3:
+        day_end = day + datetime.timedelta(days=7)
+        df_arrivals = get_arrivals(df, "Abreise", day, day_end)
+        st.write("Abreisen - nächste 7 Tage")
+        st.dataframe(df_arrivals)
 
 
-df_cal = get_calendar_df()
-# st.dataframe(df_cal)
-df_suche = df_cal[df_cal['Suche'] == True]
-df_biete = df_cal[df_cal['Biete'] == True]
-df_piv = df_cal.pivot(index='Name', columns='Date', values='Anwesend')
-order = df.sort_values(by='Ankunft')["Name"]
-order = list(order)
-# df_piv = df_piv.sort_values(by='Name', key=lambda x: order.index(x))
-df_piv = df_piv.reindex(order)
+st_slider = st.slider(
+    "Zeitraum",
+    value=(start_date, end_date), format="DD.MM.YYYY")
+df_cal, styled_df = get_calendars_piv(df, 'Anwesend', st_slider[0], st_slider[1])
+df_cal_suche, styled_df_suche = get_calendars_piv(df, 'Suchend', st_slider[0], st_slider[1])
+df_cal_biete, styled_df_biete = get_calendars_piv(df, 'Bietend', st_slider[0], st_slider[1])
 
 
-column_map = {}
-cols = df_piv.columns
-for col in cols:
-    split = str(col).split("-")
-    column_map[col] = split[2] + "." + split[1]
-df_piv.rename(columns=column_map, inplace=True)
-
-df_piv_suche = df_suche.pivot(index='Name', columns='Date', values='Suchend')
-df_piv_biete = df_biete.pivot(index='Name', columns='Date', values='Bietend')
-
-
-def highlight_cells_green(value):
-    if value:
-        return 'background-color: green'
-    else:
-        return ''
-
-def highlight_cells_orange(value):
-    if value:
-        return 'background-color: orange'
-    else:
-        return ''
-
-def highlight_cells_blue(value):
-    if value:
-        return 'background-color: lightblue'
-    else:
-        return ''
-
-styled_df = df_piv.style.applymap(highlight_cells_green)
-styled_df_suche = df_piv_suche.style.applymap(highlight_cells_orange)
-styled_df_biete = df_piv_biete.style.applymap(highlight_cells_blue)
+# streamlit
 
 stdf_anwesend = st.dataframe(styled_df)
 
 with st.expander("Personen, die noch eine Unterkunft suchen:"):
-    if not df_piv_suche.empty:
+    if not df_cal_suche.empty:
         stdf_suchen = st.dataframe(styled_df_suche)
     else:
         st.error("Es werden zurzeit keine Unterkünfte gesucht")
 
 with st.expander("Personen, die eine Unterkunft anbieten:"):
-    if not df_piv_biete.empty:
+    if not df_cal_biete.empty:
         stdf_biete = st.dataframe(styled_df_biete)
     else:
         st.error("Es werden zurzeit keine Unterkünfte angeboten")
