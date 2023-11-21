@@ -204,9 +204,6 @@ def highlight_cells_blue(value):
 
 def get_attendance(df, day):
     df_ = df[(df["Ankunft"].dt.date <= day) & (df["Abreise"].dt.date >= day)].shape[0]
-    print()
-    print("day")
-    print(df_)
     return df_
     
 

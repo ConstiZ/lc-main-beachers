@@ -30,8 +30,7 @@ if __name__ == "__main__":
 df = get_df(get_worksheet())
 
 day = date.today()
-day = datetime.date(2023, 12, 30)
-with st.expander("Stats - Heute " + str(day.strftime("%d.%m.%Y")), expanded=True):
+with st.expander("Stats - Heute " + str(day.strftime("%d.%m.%Y")), expanded=False):
     col1, col2, col3 = st.columns(3)
     
     # Metric Cards
@@ -49,7 +48,7 @@ with st.expander("Stats - Heute " + str(day.strftime("%d.%m.%Y")), expanded=True
     with col2:
         day_end = day + datetime.timedelta(days=7)
         df_arrivals = get_arrivals(df, "Ankunft", day, day_end)
-        st.write("Ankunft - nächste 7 TAge")
+        st.write("Ankunft - nächste 7 Tage")
         st.dataframe(df_arrivals)
 
     with col3:
@@ -145,7 +144,5 @@ if cb_lf and isinstance(d_lf, tuple) and len(d_lf) > 1:
 
 b_submit = st.button("Submit")
 if b_submit:
-    print(row)
-    print()
     submit_registration(row)
     st.rerun()
