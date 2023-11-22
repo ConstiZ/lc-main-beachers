@@ -54,7 +54,7 @@ with st.expander("Stats - Heute " + str(day.strftime("%d.%m.%Y")), expanded=Fals
     with col3:
         day_end = day + datetime.timedelta(days=7)
         df_arrivals = get_arrivals(df, "Abreise", day, day_end)
-        st.write("Abreisen - nächste 7 Tage")
+        st.write("Abreise - nächste 7 Tage")
         st.dataframe(df_arrivals)
 
 
