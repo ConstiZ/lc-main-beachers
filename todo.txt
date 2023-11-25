@@ -1,0 +1,7 @@
+Backend:
+    tournament_util.py in anderen codespace packen
+    trigger einbauen, der gspread nach neuen daten checkt
+
+Frontend:
+    Login überlegen (Google Auth, throwaway pw)
+    
