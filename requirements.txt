@@ -8,3 +8,6 @@ pandasql
 gspread_dataframe
 plotly
 streamlit-aggrid
+Faker
+graphviz
+uuid
