@@ -60,7 +60,7 @@ with st.expander("Stats - Heute " + str(day.strftime("%d.%m.%Y")), expanded=Fals
 
 st_slider = st.slider(
     "Zeitraum",
-    value=(start_date, end_date), format="DD.MM.YYYY")
+    value=(date.today()     , end_date), format="DD.MM.YYYY")
 df_cal, styled_df = get_calendars_piv(df, 'Anwesend', st_slider[0], st_slider[1])
 df_cal_suche, styled_df_suche = get_calendars_piv(df, 'Suchend', st_slider[0], st_slider[1])
 df_cal_biete, styled_df_biete = get_calendars_piv(df, 'Bietend', st_slider[0], st_slider[1])
