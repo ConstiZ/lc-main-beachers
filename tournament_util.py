@@ -6,6 +6,7 @@ from faker import Faker
 from faker.providers import emoji
 import uuid
 
+
 class Player:
     def __init__(self, name: str):
         self.name = name
@@ -44,13 +45,13 @@ class Match:
     __match_codes = set()
     winning_points = 15
     sets = 2
+
     def __init__(self, teama: Team, teamb: Team):
         self.teama: Team = teama
         self.teamb: Team = teamb
         self.is_over = False
-        
+
         self.match_code = Match.create_match_id()
-        print(self.match_code)
 
     def create_match_id():
         i = 0
@@ -64,13 +65,13 @@ class Match:
 
     def __str__(self):
         return f"{str(self.teama)} vs {str(self.teamb)}"
-    
+
     def submit_results(self, results: list[tuple[2]]):
         self.results = results
         self.is_over = True
 
     def get_winner(self) -> Team:
-        if self.is_over:
+        if not self.is_over:
             return None
         else:
             gamesa, gamesb, pointsa, pointsb = self.evaluate_results(self.results)
@@ -84,28 +85,46 @@ class Match:
                 return self.teamb
             else:
                 # TODO how to handle draw?
-                return self.teama
-    
+                return (self.teama, self.teamb)
+
     def evaluate_results(self, results):
-            gamesa = 0
-            gamesb = 0
-            pointsa = 0
-            pointsb = 0
-            for scorea, scoreb in self.results:
-                pointsa += scorea
-                pointsb += scoreb
-                if scorea > scoreb:
-                    gamesa += 1
-                else:
-                    gamesb +=1
-            return gamesa, gamesb, pointsa, pointsb
-    
+        gamesa = 0
+        gamesb = 0
+        pointsa = 0
+        pointsb = 0
+        for scorea, scoreb in self.results:
+            pointsa += scorea
+            pointsb += scoreb
+            if scorea > scoreb:
+                gamesa += 1
+            else:
+                gamesb += 1
+        return gamesa, gamesb, pointsa, pointsb
+
+    def to_string(self):
+        s = f"{str(self.teama)} vs. {str(self.teamb)}: "
+        if not self.is_over:
+            return s + " Ongoing"
+        else:
+            winner = self.get_winner()
+            if isinstance(winner, Team):
+                s += f"Winner {str(winner)}"
+            elif isinstance(winner, tuple):
+                s += "Draw"
+            else:
+                s += "Error"
+        return s
+
     def get_names(self):
-        return [self.teama.playera.name, self.teama.playerb.name, self.teamb.playera.name, self.teamb.playerb.name]
+        return [
+            self.teama.playera.name,
+            self.teama.playerb.name,
+            self.teamb.playera.name,
+            self.teamb.playerb.name,
+        ]
 
     def has_player(self, name):
         return name in self.get_names()
-
 
 
 class Round:
@@ -118,7 +137,20 @@ class Round:
         pass
 
     def get_match(self, match_code=None, name=None):
-        return next((match for match in self.matches if match.match_code == match_code or match.has_player(name)), None)
+        return next(
+            (
+                match
+                for match in self.matches
+                if match.match_code == match_code or match.has_player(name)
+            ),
+            None,
+        )
+
+    def to_string(self):
+        s = ""
+        for match in self.matches:
+            s += match.to_string() + "\n"
+        return s
 
 
 class Tournament:
@@ -126,17 +158,16 @@ class Tournament:
     min_courts = 2
 
     def __init__(self, tournament_name: str, creation_date: date = None):
-        self.name = tournament_name
-        self.teams = []
-        self.ranking = []
-        self.rounds = []
-        self.courts = 0
-        self.mode = None
-        self.creation_date = (
+        self.name:str = tournament_name
+        self.teams:list(Team) = []
+        self.ranking:list(Team) = []
+        self.rounds:list(Round) = []
+        self.courts:int = 0
+        self.mode:str = None
+        self.creation_date:date = (
             creation_date if creation_date is not None else date.today()
         )
-        self.current_round = 0
-
+        self.current_round:int = 0
 
     def register_team(self, team: Team):
         self.teams.append(team)
@@ -145,21 +176,33 @@ class Tournament:
     def __str__(self):
         return f"{self.name} [{self.mode} mode]: {self.creation_date}"
 
+    def to_string(self):
+        s = str(self) + "\n"
+        for i in range(0, self.current_round):
+            round = self.rounds[i]
+            s += "\nRound " + str(i) + "\n"
+            s += round.to_string() + "\n"
+        return s
+
     def status_code(self):
         # -1: not possible
         if len(self.teams) < self.min_teams or self.courts < self.min_courts:
             return -1
         else:
             return self.current_round
-    
+
     @abstractmethod
     def initializeRound(self, current_round: int):
         pass
-    
-    def get_match(self, match_code:str=None, name:str=None)-> Match:
-        return self.rounds[self.current_round - 1].get_match(match_code=match_code, name=name)
-    
-    def submit_results(self, results: list[tuple[2]], name:str=None, match_code:str=None)->bool:
+
+    def get_match(self, match_code: str = None, name: str = None) -> Match:
+        return self.rounds[self.current_round - 1].get_match(
+            match_code=match_code, name=name
+        )
+
+    def submit_results(
+        self, results: list[tuple[2]], name: str = None, match_code: str = None
+    ) -> bool:
         match = self.get_match(name=name, match_code=match_code)
         if match is None:
             # TODO exception hier?
@@ -167,21 +210,21 @@ class Tournament:
         match.submit_results(results)
 
 
-
-
 class SwissTournament(Tournament):
     def __init__(self, tournament_name: str):
         super().__init__(tournament_name)
         self.mode = "Swiss"
 
-    def initializeRound(self, current_round: int):
+    def initializeRound(self, current_round: int = None):
+        if current_round is None:
+            current_round = self.current_round
         if current_round == 0:
             # first round
             # initialize with random seeding
             sr = SwissRound(self.teams)
             sr.initializeMatches(SwissRound.randomSeeding(sr.teams))
             self.rounds.append(sr)
-        
+
         self.current_round += 1
 
 
@@ -196,7 +239,7 @@ class SwissRound(Round):
             Match(seeding_teams[i], seeding_teams[i + 1])
             for i in range(0, len(seeding_teams), 2)
         ]
-    
+
     def randomSeeding(teams: list[Team]) -> list[Team]:
         return random.sample(teams, len(teams))
 
@@ -208,10 +251,14 @@ if __name__ == "__main__":
 
     for _ in range(8):
         team = Team(fake.emoji(), Player(fake.name()), Player(fake.name()))
-        # print(team)
+        print(team)
         st.register_team(team)
 
-    st.initializeRound(st.current_round)
-    pass
-    match = st.get_match(name=team.playera.name)
+    st.initializeRound()
+    matches = st.rounds[st.current_round - 1].matches
+    for match in matches:
+        match.submit_results([(15, 11), (10, 15)])
+
+    print("--------------")
+    print(st.to_string())
     pass
